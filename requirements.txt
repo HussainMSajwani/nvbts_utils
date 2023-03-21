@@ -1,0 +1,11 @@
+dask==2023.3.1
+h5py==3.8.0
+ipython==8.11.0
+matplotlib==3.5.3
+numpy==1.23.5
+opencv_python==4.6.0.66
+pandas==1.5.2
+rosbag==1.15.15
+rospy==1.15.15
+seaborn==0.12.2
+tqdm==4.64.1
