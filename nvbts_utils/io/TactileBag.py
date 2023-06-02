@@ -60,6 +60,9 @@ class TactileBag:
                     event = [e.x, e.y, e.ts.to_nsec(), e.polarity]
                     ev_array.append(event)
                 events.append(da.array(ev_array))
+        
+        da_event.to_hdf5(self.path / 'events.h5', 'events')
+
 
         ########## parse other
         if len(topics) == 0:
@@ -105,7 +108,6 @@ class TactileBag:
             df.to_csv(self.path / 'parsed_bag.csv', index=False)
 
         da_event = da.vstack(events)
-        da_event.to_hdf5(self.path / 'events.h5', 'events')
 
 
     def is_parsed(self):
