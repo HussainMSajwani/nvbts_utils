@@ -47,11 +47,10 @@ class TactileBag:
         contact_status_ts = []
         contact_angle = []
         contact_angle = []
-        topics = ['/dvs/events']
 
         for topic, msg, t in tqdm(
-            bag_file.read_messages(topics=topics), 
-            total=sum([bag_file.get_message_count(top) for top in topics]),
+            bag_file.read_messages(topics=['/dvs/events']), 
+            total=sum([bag_file.get_message_count(top) for top in ['/dvs/events']]),
             desc='parsing events',
             unit='msg'
         ):
