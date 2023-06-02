@@ -18,7 +18,17 @@ class TactileBag:
     def __init__(self, path, desc) -> None:
         self.path = Path(path).resolve()
         self.desc = desc
-    
+
+    @property
+    def bag_file(self):
+        bag_file_name = list(self.path.glob('*.bag'))
+
+        if len(bag_file_name) > 1:
+            raise Warning(f'More than one bag found. Choosing {bag_file_name[0]}')
+        
+        bag_file_name = bag_file_name[0]
+        self.bag_file = rosbag.Bag(bag_file_name)     
+
     def parse(
         self,
         start_time=0,
@@ -33,13 +43,6 @@ class TactileBag:
         with open(self.path / 'params.json', 'w') as f:
             json.dump(params, f, indent=4)
 
-        bag_file_name = list(self.path.glob('*.bag'))
-
-        if len(bag_file_name) > 1:
-            raise Warning(f'More than one bag found. Choosing {bag_file_name[0]}')
-        
-        bag_file_name = bag_file_name[0]
-        bag_file = rosbag.Bag(bag_file_name)     
         
         ############## parse events
         events = []
@@ -49,8 +52,8 @@ class TactileBag:
         contact_angle = []
 
         for topic, msg, t in tqdm(
-            bag_file.read_messages(topics=['/dvs/events']), 
-            total=sum([bag_file.get_message_count(top) for top in ['/dvs/events']]),
+            self.bag_file.read_messages(topics=['/dvs/events']), 
+            total=sum([self.bag_file.get_message_count(top) for top in ['/dvs/events']]),
             desc='parsing events',
             unit='msg'
         ):
@@ -60,7 +63,8 @@ class TactileBag:
                     event = [e.x, e.y, e.ts.to_nsec(), e.polarity]
                     ev_array.append(event)
                 events.append(da.array(ev_array))
-        
+                
+        da_event = da.vstack(events)
         da_event.to_hdf5(self.path / 'events.h5', 'events')
 
 
@@ -69,8 +73,8 @@ class TactileBag:
             return
         else:
             for topic, msg, t in tqdm(
-                bag_file.read_messages(topics=topics, start_time=Time(start_time)), 
-                total=sum([bag_file.get_message_count(top) for top in topics]),
+                self.bag_file.read_messages(topics=topics, start_time=Time(start_time)), 
+                total=sum([self.bag_file.get_message_count(top) for top in topics]),
                 desc='parsing other',
                 unit='msg'
             ):
@@ -87,7 +91,7 @@ class TactileBag:
                     # Updated contact status according to no. of events
 
             #print(events)
-        bag_file.close()
+        self.bag_file.close()
       
         contact_angle = np.array(contact_angle)
         if '/contact_status' in topics:
@@ -107,7 +111,6 @@ class TactileBag:
             )   
             df.to_csv(self.path / 'parsed_bag.csv', index=False)
 
-        da_event = da.vstack(events)
 
 
     def is_parsed(self):
